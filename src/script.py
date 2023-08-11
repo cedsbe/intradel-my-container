@@ -1,12 +1,17 @@
+import os
 from datetime import datetime
 from pprint import pprint
 
 from intradel_my_container import Informations, IntradelMyContainer, Organic, Residual
 
+LOGIN = os.getenv("INTRADEL_LOGIN")
+PASSWORD = os.environ.get("INTRADEL_PASSWORD")
+MUNICIPALITY = os.environ.get("MUNICIPALITY")
+
 data: IntradelMyContainer = IntradelMyContainer(
-    login="XXXXX",
-    password="XXXXXXXX",
-    municipality="XXX",
+    login=LOGIN,
+    password=PASSWORD,
+    municipality=MUNICIPALITY,
     start_date=datetime.today().replace(year=2014, month=1, day=1),
 )
 
