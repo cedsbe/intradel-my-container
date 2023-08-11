@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "intradel-my-container"
+version = "0.1.0"
+description = ""
+authors = ["Cédric Ghiot"]
+readme = "README.md"
+packages = [{include = "intradel_my_container", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "~3.11"
+requests = "~2.31.0"
+beautifulsoup4 = "^4.12.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
