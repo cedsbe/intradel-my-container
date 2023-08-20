@@ -1,12 +1,15 @@
 import re
+from abc import ABC
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 import requests
 from bs4 import BeautifulSoup, ResultSet, Tag
 
-from .const import *
-from .functions import cleanup, extract_number, find_date
+from intradel_my_container.const import *
+from intradel_my_container.functions import cleanup, extract_number, find_date
+
+from . import const
 
 
 class Pickup:
@@ -23,10 +26,10 @@ class Material:
     quantity: float
     unit: str
 
-    def __init__(self, name: str, quantity: str, unit: str) -> None:
-        self.name = name
+    def __init__(self, name: str, quantity: float, unit: str) -> None:
+        self.name = name.removesuffix(" ")
         self.quantity = quantity
-        self.unit = unit
+        self.unit = unit.removesuffix(" ")
 
 
 class Dropout:
@@ -36,17 +39,19 @@ class Dropout:
     _raw_materials: str
 
     def _create_material(self, raw_material: str) -> List[Material]:
+        raw_material = cleanup(raw_material)
         split_materials = raw_material.split(",")
         list_material: List[Material] = []
         for material in split_materials:
             search = re.search(r"(.*)\((\d+\.\d+)\s(.*)\)", material)
-            list_material.append(
-                Material(
-                    name=search.group(1),
-                    quantity=float(search.group(2)),
-                    unit=search.group(3),
+            if search is not None:
+                list_material.append(
+                    Material(
+                        name=search.group(1),
+                        quantity=float(search.group(2)),
+                        unit=search.group(3),
+                    )
                 )
-            )
         return list_material
 
     def __init__(self, date: datetime, parc: str, materials: str) -> None:
@@ -84,7 +89,7 @@ class Informations:
         self.actif = find_date(dict_my_informations[INTRADEL_INFO_ACTIF])
 
 
-class TrashBin(object):
+class TrashBin(ABC):
     volume: int
     chip_number: str
     status: str
@@ -93,12 +98,13 @@ class TrashBin(object):
 
     def get_pickups(self, content: Tag) -> List[Pickup]:
         pickup_list: List[Pickup] = []
+        all_tr_in_tbody_table: Any = []
 
-        all_tr_in_tbody_table = (
-            content.find_next("table", id="table_results")
-            .find_next("tbody")
-            .find_all("tr")
-        )
+        next_table_results = content.find_next("table", id="table_results")
+        if isinstance(next_table_results, Tag):
+            next_tbody = next_table_results.find_next("tbody")
+        if isinstance(next_tbody, Tag):
+            all_tr_in_tbody_table = next_tbody.find_all("tr")
 
         for table_line in all_tr_in_tbody_table:
             pickup_entry = table_line.find_all("td")
@@ -117,7 +123,7 @@ class TrashBin(object):
     def total_collects_per_year(self) -> Dict[str, int]:
         per_year_dict: Dict[str, int] = {}
         for pickup in self.pickups:
-            year: str = pickup.date.year
+            year: str = str(pickup.date.year)
             if year in per_year_dict.keys():
                 per_year_dict[year] = per_year_dict[year] + 1
             else:
@@ -130,10 +136,10 @@ class TrashBin(object):
             total = total + pickup.kilograms
         return total
 
-    def total_kilograms_per_year(self) -> Dict[str, int]:
-        per_year_dict: Dict[str, int] = {}
+    def total_kilograms_per_year(self) -> Dict[str, float]:
+        per_year_dict: Dict[str, float] = {}
         for pickup in self.pickups:
-            year: str = pickup.date.year
+            year: str = str(pickup.date.year)
             if year in per_year_dict.keys():
                 per_year_dict[year] = per_year_dict[year] + pickup.kilograms
             else:
@@ -170,13 +176,14 @@ class Recyparc:
     dropout: List[Dropout]
 
     def get_dropouts(self, content: Tag) -> List[Dropout]:
-        dropout_list: List[Pickup] = []
+        dropout_list: List[Dropout] = []
+        all_tr_in_tbody_table: Any = []
 
-        all_tr_in_tbody_table = (
-            content.find_next("table", id="table_results")
-            .find_next("tbody")
-            .find_all("tr")
-        )
+        next_table_results = content.find_next("table", id="table_results")
+        if isinstance(next_table_results, Tag):
+            next_tbody = next_table_results.find_next("tbody")
+        if isinstance(next_tbody, Tag):
+            all_tr_in_tbody_table = next_tbody.find_all("tr")
 
         for table_line in all_tr_in_tbody_table:
             dropout_entry = table_line.find_all("td")
@@ -210,40 +217,36 @@ class IntradelMyContainer:
     _start_date_str: str
     _end_date_str: str
 
-    def __init__(
+    def _get_page_content(
         self,
         login: str,
         password: str,
         municipality: str,
-        start_date: datetime = None,
-        end_date: datetime = None,
-    ) -> None:
-        self._login = login
-        self._password = password
-        self._municipality = municipality
-
-        if start_date == None:
+        start_date: Union[None, datetime] = None,
+        end_date: Union[None, datetime] = None,
+    ) -> bytes:
+        if start_date is None:
             self.start_date = datetime.today().replace(month=1, day=1)
             self._start_date_str = self.start_date.strftime("%d-%m-%Y")
         else:
             self.start_date = start_date
             self._start_date_str = start_date.strftime("%d-%m-%Y")
 
-        if end_date == None:
+        if end_date is None:
             self.end_date = datetime.today()
             self._end_date_str = self.end_date.strftime("%d-%m-%Y")
         else:
             self.end_date = end_date
             self._end_date_str = end_date.strftime("%d-%m-%Y")
 
-        post_login: dict[str] = {
+        post_login: dict[str, str] = {
             "llogin": "YES",
-            "login": self._login,
-            "pass": self._password,
-            "commune": self._municipality,
+            "login": login,
+            "pass": password,
+            "commune": municipality,
         }
 
-        post_data: dict[str] = {
+        post_data: dict[str, str] = {
             "sdate": self._start_date_str,
             "edate": self._end_date_str,
         }
@@ -251,17 +254,42 @@ class IntradelMyContainer:
         session = requests.session()
         page = session.post(url=INTRADEL_URL_LOGIN, data=post_login)
         page = session.post(url=INTRADEL_URL_DATA, data=post_data)
-        soup: BeautifulSoup = BeautifulSoup(page.content, "html.parser")
-        all_post__content: Tag = soup.find_all("div", class_="post__content")
+
+        return page.content
+
+    def __init__(
+        self,
+        login: str,
+        password: str,
+        municipality: str,
+        start_date: Union[None, datetime] = None,
+        end_date: Union[None, datetime] = None,
+    ) -> None:
+        self._login = login
+        self._password = password
+        self._municipality = municipality
+
+        page_content: bytes = self._get_page_content(
+            login=login,
+            password=password,
+            municipality=municipality,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+        soup: BeautifulSoup = BeautifulSoup(page_content, "html.parser")
+        all_post__content: ResultSet[Any] = soup.find_all("div", class_="post__content")
 
         for content in all_post__content:
-            h3 = content.find_next("h3")
-            match h3.text:
-                case const.INTRADEL_INFO_TITLE:
-                    self.my_informations = Informations(content)
-                case const.INTRADEL_ORGANIC_TITLE:
-                    self.organic = Organic(content)
-                case const.INTRADEL_RESIDUAL_TITLE:
-                    self.residual = Residual(content)
-                case const.INTRADEL_RECYPARC_TITLE:
-                    self.recyparc = Recyparc(content)
+            if isinstance(content, Tag):
+                h3 = content.find_next("h3")
+                if h3 is not None:
+                    match h3.text:
+                        case const.INTRADEL_INFO_TITLE:
+                            self.my_informations = Informations(content)
+                        case const.INTRADEL_ORGANIC_TITLE:
+                            self.organic = Organic(content)
+                        case const.INTRADEL_RESIDUAL_TITLE:
+                            self.residual = Residual(content)
+                        case const.INTRADEL_RECYPARC_TITLE:
+                            self.recyparc = Recyparc(content)

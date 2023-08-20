@@ -4,9 +4,9 @@ from pprint import pprint
 
 from intradel_my_container import Informations, IntradelMyContainer, Organic, Residual
 
-LOGIN = os.getenv("INTRADEL_LOGIN")
-PASSWORD = os.environ.get("INTRADEL_PASSWORD")
-MUNICIPALITY = os.environ.get("MUNICIPALITY")
+LOGIN = os.getenv("INTRADEL_LOGIN", "missing_login_env")
+PASSWORD = os.environ.get("INTRADEL_PASSWORD", "missing_password_env")
+MUNICIPALITY = os.environ.get("MUNICIPALITY", "missing_municipality_env")
 
 data: IntradelMyContainer = IntradelMyContainer(
     login=LOGIN,
