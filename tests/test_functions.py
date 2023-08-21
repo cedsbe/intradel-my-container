@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict
+from typing import Dict, Union
 
 from bs4 import BeautifulSoup, Tag
 
@@ -7,7 +7,7 @@ from intradel_my_container.functions import (
     cleanup,
     extract_number,
     find_date,
-    p_to_dictionnary,
+    p_to_dictionary,
 )
 
 # Cleanup Function
@@ -89,11 +89,11 @@ def test_extract_number_no_number():
 # endregion extract_number
 
 
-# p_to_dictionnary Function
-# region p_to_dictionnary
+# p_to_dictionary Function
+# region p_to_dictionary
 
 
-def test_p_to_dictionnary_basic():
+def test_p_to_dictionary_basic():
     tag_content = """<div class="post__content">
 <h3 class="post__title">Mes informations</h3>
 <p><strong>Nom</strong> : John Doe</p>
@@ -115,8 +115,10 @@ def test_p_to_dictionnary_basic():
 </div>
 """
     soup: BeautifulSoup = BeautifulSoup(tag_content, "html.parser")
-    content: Tag = soup.div
-    p_dic: Dict[str, str] = p_to_dictionnary(content)
+    content: Union[Tag, None] = soup.div
+    if content is None:
+        assert False
+    p_dic: Dict[str, str] = p_to_dictionary(content)
     assert (
         p_dic["Nom"] == "John Doe"
         and p_dic["Catégorie"] == "Ménages"
@@ -125,4 +127,4 @@ def test_p_to_dictionnary_basic():
     )
 
 
-# endregion p_to_dictionnary
+# endregion p_to_dictionary

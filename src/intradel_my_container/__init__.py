@@ -11,33 +11,94 @@ from intradel_my_container.functions import (
     cleanup,
     extract_number,
     find_date,
-    p_to_dictionnary,
+    p_to_dictionary,
 )
 
 from . import const
 
 
 class Pickup:
+    """
+    Represents a pickup event.
+
+    Attributes:
+    ----------
+    date : datetime
+        The date of the pickup event.
+    kilograms : float
+        The weight of materials collected in kilograms.
+    """
+
     date: datetime
     kilograms: float
 
     def __init__(self, date: datetime, kilograms: float) -> None:
+        """
+        Initialize a Pickup instance.
+
+        Parameters:
+        ----------
+        date : datetime
+            The date of the pickup event.
+        kilograms : float
+            The weight of materials collected in kilograms.
+        """
         self.date = date
         self.kilograms = kilograms
 
 
 class Material:
+    """
+    Represents a material with quantity and unit.
+
+    Attributes:
+    ----------
+    name : str
+        The name of the material.
+    quantity : float
+        The quantity of the material.
+    unit : str
+        The unit of measurement for the material's quantity.
+    """
+
     name: str
     quantity: float
     unit: str
 
     def __init__(self, name: str, quantity: float, unit: str) -> None:
+        """
+        Initialize a Material instance.
+
+        Parameters:
+        ----------
+        name : str
+            The name of the material.
+        quantity : float
+            The quantity of the material.
+        unit : str
+            The unit of measurement for the material's quantity.
+        """
         self.name = name.strip()
         self.quantity = quantity
         self.unit = unit.strip()
 
 
 class Dropout:
+    """
+    Represents a dropout event.
+
+    Attributes:
+    ----------
+    date : datetime
+        The date of the dropout event.
+    parc : str
+        The name of the parc associated with the dropout event.
+    materials : List[Material]
+        A list of Material instances representing the materials in the dropout event.
+    _raw_materials : str
+        The raw string of materials before processing.
+    """
+
     date: datetime
     parc: str
     materials: List[Material]
@@ -60,6 +121,19 @@ class Dropout:
         return list_material
 
     def __init__(self, date: datetime, parc: str, materials: str) -> None:
+        """
+        Initialize a Dropout instance.
+
+        Parameters:
+        ----------
+        date : datetime
+            The date of the dropout event.
+        parc : str
+            The name of the parc associated with the dropout event.
+        materials : str
+            A string containing materials data.
+        """
+
         self.date = date
         self.parc = parc
         self.materials = self._create_material(raw_material=materials)
@@ -67,13 +141,37 @@ class Dropout:
 
 
 class Informations:
+    """
+    Represents information about an Intradel user.
+
+    Attributes:
+    ----------
+    name : str
+        The name of the Intradel user.
+    category : str
+        The category of the user.
+    address : str
+        The address of the user.
+    actif : datetime
+        The active date of the user.
+    """
+
     name: str
     category: str
     address: str
     actif: datetime
 
     def __init__(self, content: Tag) -> None:
-        dict_my_informations: Dict[str, str] = p_to_dictionnary(content)
+        """
+        Initialize an Informations instance.
+
+        Parameters:
+        ----------
+        content : Tag
+            The HTML 'Tag' object containing information content.
+        """
+
+        dict_my_informations: Dict[str, str] = p_to_dictionary(content)
 
         self.name = dict_my_informations[INTRADEL_INFO_NAME]
         self.category = dict_my_informations[INTRADEL_INFO_CATEGORY]
@@ -82,6 +180,23 @@ class Informations:
 
 
 class TrashBin(ABC):
+    """
+    Abstract base class representing a trash bin.
+
+    Attributes:
+    ----------
+    volume : int
+        The volume of the trash bin.
+    chip_number : str
+        The chip number of the trash bin.
+    status : str
+        The status of the trash bin.
+    since : datetime
+        The starting date of the trash bin's usage.
+    pickups : List[Pickup]
+        A list of Pickup instances representing pickup events associated with the trash bin.
+    """
+
     volume: int
     chip_number: str
     status: str
@@ -89,6 +204,20 @@ class TrashBin(ABC):
     pickups: List[Pickup]
 
     def get_pickups(self, content: Tag) -> List[Pickup]:
+        """
+        Retrieve a list of pickup events associated with the trash bin.
+
+        Parameters:
+        ----------
+        content : Tag
+            The HTML 'Tag' object containing trash bin content.
+
+        Returns:
+        -------
+        List[Pickup]
+            A list of Pickup instances representing pickup events associated with the trash bin.
+        """
+
         pickup_list: List[Pickup] = []
         all_tr_in_tbody_table: Any = []
 
@@ -110,9 +239,26 @@ class TrashBin(ABC):
         return pickup_list
 
     def total_collects(self) -> int:
+        """
+        Calculate the total number of pickup events.
+
+        Returns:
+        -------
+        int
+            The total number of pickup events.
+        """
         return len(self.pickups)
 
     def total_collects_per_year(self) -> Dict[str, int]:
+        """
+        Calculate the total number of pickup events per year.
+
+        Returns:
+        -------
+        Dict[str, int]
+            A dictionary with years as keys and the corresponding total pickup events as values.
+        """
+
         per_year_dict: Dict[str, int] = {}
         for pickup in self.pickups:
             year: str = str(pickup.date.year)
@@ -123,12 +269,30 @@ class TrashBin(ABC):
         return per_year_dict
 
     def total_kilograms(self) -> float:
+        """
+        Calculate the total weight of materials collected.
+
+        Returns:
+        -------
+        float
+            The total weight of materials collected in kilograms.
+        """
+
         total: float = 0
         for pickup in self.pickups:
             total = total + pickup.kilograms
         return total
 
     def total_kilograms_per_year(self) -> Dict[str, float]:
+        """
+        Calculate the total weight of materials collected per year.
+
+        Returns:
+        -------
+        Dict[str, float]
+            A dictionary with years as keys and the corresponding total weight of materials collected as values.
+        """
+
         per_year_dict: Dict[str, float] = {}
         for pickup in self.pickups:
             year: str = str(pickup.date.year)
@@ -140,8 +304,27 @@ class TrashBin(ABC):
 
 
 class Organic(TrashBin):
+    """
+    Represents an organic waste trash bin.
+
+    Inherits from TrashBin.
+
+    Attributes:
+    ----------
+    (inherits attributes from TrashBin)
+    """
+
     def __init__(self, content: Tag) -> None:
-        dict_organic: Dict[str, str] = p_to_dictionnary(content)
+        """
+        Initialize an Organic instance.
+
+        Parameters:
+        ----------
+        content : Tag
+            The HTML 'Tag' object containing organic waste content.
+        """
+
+        dict_organic: Dict[str, str] = p_to_dictionary(content)
 
         self.volume = extract_number(dict_organic[INTRADEL_ORGANIC_VOLUME])
         self.chip_number = dict_organic[INTRADEL_ORGANIC_CHIP_NUMBER]
@@ -151,8 +334,27 @@ class Organic(TrashBin):
 
 
 class Residual(TrashBin):
+    """
+    Represents a residual waste trash bin.
+
+    Inherits from TrashBin.
+
+    Attributes:
+    ----------
+    (inherits attributes from TrashBin)
+    """
+
     def __init__(self, content: Tag) -> None:
-        dict_residual: Dict[str, str] = p_to_dictionnary(content)
+        """
+        Initialize a Residual instance.
+
+        Parameters:
+        ----------
+        content : Tag
+            The HTML 'Tag' object containing residual waste content.
+        """
+
+        dict_residual: Dict[str, str] = p_to_dictionary(content)
 
         self.volume = extract_number(dict_residual[INTRADEL_RESIDUAL_VOLUME])
         self.chip_number = dict_residual[INTRADEL_RESIDUAL_CHIP_NUMBER]
@@ -164,10 +366,35 @@ class Residual(TrashBin):
 
 
 class Recyparc:
+    """
+    Represents the recyparc visits.
+
+    Attributes:
+    ----------
+    since : datetime
+        The starting date of the recyparc's operation.
+    dropout : List[Dropout]
+        A list of Dropout instances representing dropout events associated with the recyparc.
+    """
+
     since: datetime
     dropout: List[Dropout]
 
     def get_dropouts(self, content: Tag) -> List[Dropout]:
+        """
+        Retrieve a list of dropout events associated with the recyparc.
+
+        Parameters:
+        ----------
+        content : Tag
+            The HTML 'Tag' object containing recyparc content.
+
+        Returns:
+        -------
+        List[Dropout]
+            A list of Dropout instances representing dropout events associated with the recyparc.
+        """
+
         dropout_list: List[Dropout] = []
         all_tr_in_tbody_table: Any = []
 
@@ -190,16 +417,54 @@ class Recyparc:
         return dropout_list
 
     def __init__(self, content: Tag) -> None:
-        dict_recyparc: Dict[str, str] = p_to_dictionnary(content)
+        """
+        Initialize a Recyparc instance.
+
+        Parameters:
+        ----------
+        content : Tag
+            The HTML 'Tag' object containing recyparc content.
+        """
+
+        dict_recyparc: Dict[str, str] = p_to_dictionary(content)
 
         self.since = find_date(dict_recyparc[INTRADEL_RESIDUAL_SINCE])
         self.dropout = self.get_dropouts(content)
 
 
 class IntradelMyContainer:
+    """
+    Represents an IntradelMyContainer instance for retrieving waste management data.
+
+    Attributes:
+    ----------
+    _login : str
+        The login credential.
+    _password : str
+        The password credential.
+    _municipality_id : str
+        The id of the municipality.
+    my_informations : Informations
+        An Informations instance containing location information.
+    organic : Organic
+        An Organic instance containing organic waste bin information.
+    residual : Residual
+        A Residual instance containing residual waste bin information.
+    recyparc : Recyparc
+        A Recyparc instance containing recyparc information.
+    start_date : datetime
+        The start date for data retrieval.
+    end_date : datetime
+        The end date for data retrieval.
+    _start_date_str : str
+        The formatted start date string.
+    _end_date_str : str
+        The formatted end date string.
+    """
+
     _login: str
     _password: str
-    _municipality: str
+    _municipality_id: str
     my_informations: Informations
     organic: Organic
     residual: Residual
@@ -213,10 +478,32 @@ class IntradelMyContainer:
         self,
         login: str,
         password: str,
-        municipality: str,
+        municipality_id: str,
         start_date: Union[None, datetime] = None,
         end_date: Union[None, datetime] = None,
     ) -> bytes:
+        """
+        Retrieve the page content using provided credentials and parameters.
+
+        Parameters:
+        ----------
+        login : str
+            The login credential.
+        password : str
+            The password credential.
+        municipality_id : str
+            The id of the municipality.
+        start_date : Union[None, datetime], optional
+            The start date for data retrieval, by default None.
+        end_date : Union[None, datetime], optional
+            The end date for data retrieval, by default None.
+
+        Returns:
+        -------
+        bytes
+            The page content as bytes.
+        """
+
         if start_date is None:
             self.start_date = datetime.today().replace(month=1, day=1)
             self._start_date_str = self.start_date.strftime("%d-%m-%Y")
@@ -235,7 +522,7 @@ class IntradelMyContainer:
             "llogin": "YES",
             "login": login,
             "pass": password,
-            "commune": municipality,
+            "commune": municipality_id,
         }
 
         post_data: dict[str, str] = {
@@ -253,18 +540,35 @@ class IntradelMyContainer:
         self,
         login: str,
         password: str,
-        municipality: str,
+        municipality_id: str,
         start_date: Union[None, datetime] = None,
         end_date: Union[None, datetime] = None,
     ) -> None:
+        """
+        Initialize an IntradelMyContainer instance.
+
+        Parameters:
+        ----------
+        login : str
+            The login credential.
+        password : str
+            The password credential.
+        municipality_id : str
+            The id of the municipality.
+        start_date : Union[None, datetime], optional
+            The start date for data retrieval, by default None.
+        end_date : Union[None, datetime], optional
+            The end date for data retrieval, by default None.
+        """
+
         self._login = login
         self._password = password
-        self._municipality = municipality
+        self._municipality_id = municipality_id
 
         page_content: bytes = self._get_page_content(
             login=login,
             password=password,
-            municipality=municipality,
+            municipality_id=municipality_id,
             start_date=start_date,
             end_date=end_date,
         )

@@ -11,8 +11,8 @@ MUNICIPALITY = os.environ.get("MUNICIPALITY", "missing_municipality_env")
 data: IntradelMyContainer = IntradelMyContainer(
     login=LOGIN,
     password=PASSWORD,
-    municipality=MUNICIPALITY,
-    start_date=datetime.today().replace(year=2014, month=1, day=1),
+    municipality_id=MUNICIPALITY,
+    start_date=datetime(2014, 1, 1, 0, 0),
 )
 
 informations: Informations = data.my_informations

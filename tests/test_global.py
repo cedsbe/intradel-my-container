@@ -27,7 +27,7 @@ def test_full_with_mock():
     data: IntradelMyContainer = IntradelMyContainer(
         login="not_required__mocked",
         password="not_required__mocked",
-        municipality="not_required__mocked",
+        municipality_id="not_required__mocked",
         start_date=datetime.today().replace(year=2014, month=1, day=1),
     )
     assert data.my_informations.__class__ == Informations

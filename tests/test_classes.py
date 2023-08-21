@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List
+from typing import List, Union
 
 from bs4 import BeautifulSoup, Tag
 
@@ -123,7 +123,9 @@ def test_informations_basic():
 </div>
 """
     soup: BeautifulSoup = BeautifulSoup(tag_content, "html.parser")
-    content: Tag = soup.div
+    content: Union[Tag, None] = soup.div
+    if content is None:
+        assert False
     info: Informations = Informations(content)
     assert (
         info.name == "John Doe"
@@ -515,7 +517,9 @@ def test_organic_basic():
 </div>
 """
     soup: BeautifulSoup = BeautifulSoup(tag_content, "html.parser")
-    content: Tag = soup.div
+    content: Union[Tag, None] = soup.div
+    if content is None:
+        assert False
     organic: Organic = Organic(content)
     assert (
         organic.volume == 240
@@ -912,7 +916,9 @@ def test_residual_basic():
 </div>
 """
     soup: BeautifulSoup = BeautifulSoup(tag_content, "html.parser")
-    content: Tag = soup.div
+    content: Union[Tag, None] = soup.div
+    if content is None:
+        assert False
     residual: Residual = Residual(content)
     assert (
         residual.volume == 240
@@ -1234,7 +1240,9 @@ def test_recyparc_basic():
 </div>
 """
     soup: BeautifulSoup = BeautifulSoup(tag_content, "html.parser")
-    content: Tag = soup.div
+    content: Union[Tag, None] = soup.div
+    if content is None:
+        assert False
     recyparc: Recyparc = Recyparc(content)
     assert (
         recyparc.since == datetime(2013, 2, 1, 0, 0)
