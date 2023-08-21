@@ -7,7 +7,12 @@ import requests
 from bs4 import BeautifulSoup, ResultSet, Tag
 
 from intradel_my_container.const import *
-from intradel_my_container.functions import cleanup, extract_number, find_date
+from intradel_my_container.functions import (
+    cleanup,
+    extract_number,
+    find_date,
+    p_to_dictionnary,
+)
 
 from . import const
 
@@ -27,9 +32,9 @@ class Material:
     unit: str
 
     def __init__(self, name: str, quantity: float, unit: str) -> None:
-        self.name = name.removesuffix(" ")
+        self.name = name.strip()
         self.quantity = quantity
-        self.unit = unit.removesuffix(" ")
+        self.unit = unit.strip()
 
 
 class Dropout:
@@ -59,19 +64,6 @@ class Dropout:
         self.parc = parc
         self.materials = self._create_material(raw_material=materials)
         self._raw_materials = materials
-
-
-def p_to_dictionnary(content: Tag) -> Dict[str, str]:
-    p_dic: Dict[str, str] = {}
-
-    for p in content.find_all("p"):
-        splitted_text: List = p.text.split(":")
-        if len(splitted_text) == 2:
-            key = cleanup(splitted_text[0])
-            value = cleanup(splitted_text[1])
-            p_dic[key] = value
-
-    return p_dic
 
 
 class Informations:

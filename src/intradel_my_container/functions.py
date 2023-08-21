@@ -1,5 +1,8 @@
 import re
 from datetime import datetime
+from typing import Dict, List
+
+from bs4 import Tag
 
 
 def cleanup(string: str) -> str:
@@ -27,3 +30,16 @@ def extract_number(string: str) -> int:
     else:
         result = search.group(1)
         return int(result)
+
+
+def p_to_dictionnary(content: Tag) -> Dict[str, str]:
+    p_dic: Dict[str, str] = {}
+
+    for p in content.find_all("p"):
+        splitted_text: List = p.text.split(":")
+        if len(splitted_text) == 2:
+            key = cleanup(splitted_text[0])
+            value = cleanup(splitted_text[1])
+            p_dic[key] = value
+
+    return p_dic
