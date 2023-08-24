@@ -1,3 +1,4 @@
+"""Centralize helper functions."""
 import re
 from datetime import datetime
 from typing import Dict, List
@@ -37,7 +38,8 @@ def find_date(string: str) -> datetime:
     Returns:
     -------
     datetime
-        A datetime object representing the extracted date. If no date is found, returns January 1, 1970.
+        A datetime object representing the extracted date.
+        If no date is found, returns January 1, 1970.
     """
 
     search = re.search(r"(\d\d-\d\d-\d\d\d\d)", string)
@@ -85,13 +87,14 @@ def p_to_dictionary(content: Tag) -> Dict[str, str]:
     Returns:
     -------
     Dict[str, str]
-        A dictionary containing key-value pairs extracted from the 'p' tags. Keys are cleaned up and values are cleaned up and stored as strings.
+        A dictionary containing key-value pairs extracted from the 'p' tags.
+        Keys are cleaned up and values are cleaned up and stored as strings.
     """
 
     p_dic: Dict[str, str] = {}
 
-    for p in content.find_all("p"):
-        splitted_text: List = p.text.split(":")
+    for p_tag in content.find_all("p"):
+        splitted_text: List = p_tag.text.split(":")
         if len(splitted_text) == 2:
             key = cleanup(splitted_text[0])
             value = cleanup(splitted_text[1])

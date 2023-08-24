@@ -1,5 +1,7 @@
+"""The core of the package. Provide the functionality to parse Intradel's website"""
 import re
 from abc import ABC
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Union
 
@@ -17,6 +19,7 @@ from intradel_my_container.functions import (
 from . import const
 
 
+@dataclass
 class Pickup:
     """
     Represents a pickup event.
@@ -32,21 +35,8 @@ class Pickup:
     date: datetime
     kilograms: float
 
-    def __init__(self, date: datetime, kilograms: float) -> None:
-        """
-        Initialize a Pickup instance.
 
-        Parameters:
-        ----------
-        date : datetime
-            The date of the pickup event.
-        kilograms : float
-            The weight of materials collected in kilograms.
-        """
-        self.date = date
-        self.kilograms = kilograms
-
-
+@dataclass
 class Material:
     """
     Represents a material with quantity and unit.
@@ -65,22 +55,12 @@ class Material:
     quantity: float
     unit: str
 
-    def __init__(self, name: str, quantity: float, unit: str) -> None:
+    def __post_init__(self):
         """
-        Initialize a Material instance.
-
-        Parameters:
-        ----------
-        name : str
-            The name of the material.
-        quantity : float
-            The quantity of the material.
-        unit : str
-            The unit of measurement for the material's quantity.
+        Ensure strings are stripped a Material instance.
         """
-        self.name = name.strip()
-        self.quantity = quantity
-        self.unit = unit.strip()
+        self.name = self.name.strip()
+        self.unit = self.unit.strip()
 
 
 class Dropout:
@@ -105,6 +85,14 @@ class Dropout:
     _raw_materials: str
 
     def _create_material(self, raw_material: str) -> List[Material]:
+        """
+        Parse a string to create a list of materials.
+
+        Parameters:
+        ----------
+        raw_material : str
+            The raw material string to parse.
+        """
         raw_material = cleanup(raw_material)
         split_materials = raw_material.split(",")
         list_material: List[Material] = []
@@ -262,7 +250,7 @@ class TrashBin(ABC):
         per_year_dict: Dict[str, int] = {}
         for pickup in self.pickups:
             year: str = str(pickup.date.year)
-            if year in per_year_dict.keys():
+            if year in per_year_dict:
                 per_year_dict[year] = per_year_dict[year] + 1
             else:
                 per_year_dict[year] = 1
@@ -290,13 +278,14 @@ class TrashBin(ABC):
         Returns:
         -------
         Dict[str, float]
-            A dictionary with years as keys and the corresponding total weight of materials collected as values.
+            A dictionary with years as keys and the corresponding total weight of materials
+            collected as values.
         """
 
         per_year_dict: Dict[str, float] = {}
         for pickup in self.pickups:
             year: str = str(pickup.date.year)
-            if year in per_year_dict.keys():
+            if year in per_year_dict:
                 per_year_dict[year] = per_year_dict[year] + pickup.kilograms
             else:
                 per_year_dict[year] = pickup.kilograms
@@ -476,9 +465,6 @@ class IntradelMyContainer:
 
     def _get_page_content(
         self,
-        login: str,
-        password: str,
-        municipality_id: str,
         start_date: Union[None, datetime] = None,
         end_date: Union[None, datetime] = None,
     ) -> bytes:
@@ -520,9 +506,9 @@ class IntradelMyContainer:
 
         post_login: dict[str, str] = {
             "llogin": "YES",
-            "login": login,
-            "pass": password,
-            "commune": municipality_id,
+            "login": self._login,
+            "pass": self._password,
+            "commune": self._municipality_id,
         }
 
         post_data: dict[str, str] = {
@@ -566,9 +552,6 @@ class IntradelMyContainer:
         self._municipality_id = municipality_id
 
         page_content: bytes = self._get_page_content(
-            login=login,
-            password=password,
-            municipality_id=municipality_id,
             start_date=start_date,
             end_date=end_date,
         )
@@ -578,9 +561,9 @@ class IntradelMyContainer:
 
         for content in all_post__content:
             if isinstance(content, Tag):
-                h3 = content.find_next("h3")
-                if h3 is not None:
-                    match h3.text:
+                h3_tag = content.find_next("h3")
+                if h3_tag is not None:
+                    match h3_tag.text:
                         case const.INTRADEL_INFO_TITLE:
                             self.my_informations = Informations(content)
                         case const.INTRADEL_ORGANIC_TITLE:
