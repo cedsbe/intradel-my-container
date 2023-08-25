@@ -94,7 +94,7 @@ def p_to_dictionary(content: Tag) -> Dict[str, str]:
     p_dic: Dict[str, str] = {}
 
     for p_tag in content.find_all("p"):
-        splitted_text: List = p_tag.text.split(":")
+        splitted_text: List[str] = p_tag.text.split(":")
         if len(splitted_text) == 2:
             key = cleanup(splitted_text[0])
             value = cleanup(splitted_text[1])
