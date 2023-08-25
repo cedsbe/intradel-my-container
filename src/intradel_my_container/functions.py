@@ -20,7 +20,7 @@ def cleanup(string: str) -> str:
     str
         The cleaned up string.
     """
-    to_return: str = re.sub("\t|\n|\r", "", string.strip())
+    to_return: str = re.sub("\t+|\n+|\r+", " ", string.strip())
     to_return = re.sub(r"\s+", " ", to_return.strip())
     to_return = re.sub(" , ", ", ", to_return.strip())
     return to_return

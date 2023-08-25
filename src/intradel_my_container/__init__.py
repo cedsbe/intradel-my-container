@@ -212,17 +212,17 @@ class TrashBin(ABC):
         next_table_results = content.find_next("table", id="table_results")
         if isinstance(next_table_results, Tag):
             next_tbody = next_table_results.find_next("tbody")
-        if isinstance(next_tbody, Tag):
-            all_tr_in_tbody_table = next_tbody.find_all("tr")
+            if isinstance(next_tbody, Tag):
+                all_tr_in_tbody_table = next_tbody.find_all("tr")
 
-        for table_line in all_tr_in_tbody_table:
-            pickup_entry = table_line.find_all("td")
-            pickup_list.append(
-                Pickup(
-                    date=find_date(pickup_entry[0].text),
-                    kilograms=float(pickup_entry[2].text),
-                )
-            )
+                for table_line in all_tr_in_tbody_table:
+                    pickup_entry = table_line.find_all("td")
+                    pickup_list.append(
+                        Pickup(
+                            date=find_date(pickup_entry[0].text),
+                            kilograms=float(pickup_entry[2].text),
+                        )
+                    )
 
         return pickup_list
 
@@ -390,18 +390,18 @@ class Recyparc:
         next_table_results = content.find_next("table", id="table_results")
         if isinstance(next_table_results, Tag):
             next_tbody = next_table_results.find_next("tbody")
-        if isinstance(next_tbody, Tag):
-            all_tr_in_tbody_table = next_tbody.find_all("tr")
+            if isinstance(next_tbody, Tag):
+                all_tr_in_tbody_table = next_tbody.find_all("tr")
 
-        for table_line in all_tr_in_tbody_table:
-            dropout_entry = table_line.find_all("td")
-            dropout_list.append(
-                Dropout(
-                    date=find_date(dropout_entry[0].text),
-                    parc=dropout_entry[1].text,
-                    materials=dropout_entry[2].text,
-                )
-            )
+                for table_line in all_tr_in_tbody_table:
+                    dropout_entry = table_line.find_all("td")
+                    dropout_list.append(
+                        Dropout(
+                            date=find_date(dropout_entry[0].text),
+                            parc=dropout_entry[1].text,
+                            materials=dropout_entry[2].text,
+                        )
+                    )
 
         return dropout_list
 
@@ -419,6 +419,12 @@ class Recyparc:
 
         self.since = find_date(dict_recyparc[INTRADEL_RESIDUAL_SINCE])
         self.dropout = self.get_dropouts(content)
+
+
+class CannotParse(Exception):
+    """
+    Exception when the website cannot be parsed.
+    """
 
 
 class IntradelMyContainer:
@@ -546,7 +552,6 @@ class IntradelMyContainer:
         end_date : Union[None, datetime], optional
             The end date for data retrieval, by default None.
         """
-
         self._login = login
         self._password = password
         self._municipality_id = municipality_id
@@ -558,6 +563,11 @@ class IntradelMyContainer:
 
         soup: BeautifulSoup = BeautifulSoup(page_content, "html.parser")
         all_post__content: ResultSet[Any] = soup.find_all("div", class_="post__content")
+
+        if len(all_post__content) == 0:
+            raise CannotParse(
+                "Cannot parse the website. Check credentials or the layout changed."
+            )
 
         for content in all_post__content:
             if isinstance(content, Tag):
@@ -572,3 +582,5 @@ class IntradelMyContainer:
                             self.residual = Residual(content)
                         case const.INTRADEL_RECYPARC_TITLE:
                             self.recyparc = Recyparc(content)
+                        case _:
+                            pass

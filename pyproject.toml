@@ -10,6 +10,7 @@ packages = [{include = "intradel_my_container", from = "src"}]
 python = "~3.11"
 requests = "~2.31.0"
 beautifulsoup4 = "^4.12.2"
+typer = {extras = ["all"], version = "^0.9.0"}
 
 
 [tool.poetry.group.dev.dependencies]

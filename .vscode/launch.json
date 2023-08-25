@@ -8,7 +8,7 @@
       "name": "Python: intradel-my-container",
       "type": "python",
       "request": "launch",
-      "module": "script",
+      "module": "intradel_my_container",
       "cwd": "${workspaceFolder}",
       "justMyCode": true
     }
